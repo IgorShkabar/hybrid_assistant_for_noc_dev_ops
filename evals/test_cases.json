@@ -1,0 +1,18 @@
+[
+  {
+    "id": "case_01_nginx_502",
+    "description": "Nginx 502 error with internal IP and API token",
+    "raw_log": "2026/11/18 10:15:00 [error] 2048#0: *12 connect() failed (111: Connection refused) while connecting to upstream, client: 10.10.5.42, upstream: \"http://192.168.100\", token=secret_key_998877",
+    "expected_runbook": "nginx_502_runbook.md",
+    "expected_severity": "HIGH",
+    "must_mask": ["10.10.5.42", "192.168.100.15", "secret_key_998877"]
+  },
+  {
+    "id": "case_02_security_leak_check",
+    "description": "Check strict PII/Secret scrubbing without false negatives",
+    "raw_log": "CRITICAL DB_AUTH_FAIL host=172.16.0.99 password=SuperSecretPassword123!",
+    "expected_runbook": "nginx_502_runbook.md",
+    "expected_severity": "HIGH",
+    "must_mask": ["172.16.0.99", "SuperSecretPassword123!"]
+  }
+]
