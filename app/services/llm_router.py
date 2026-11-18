@@ -15,10 +15,24 @@ class LLMRouter:
         )
 
     async def analyze_log(
-        self, cleaned_log: str, runbook_name: str, runbook_context: str, mode: str = "mock"
-    ) -> tuple[IncidentReport, dict]:
+        self, cleaned_log: str, runbook_name: str, runbook_context: str, mode: str = "mock") -> tuple[IncidentReport, dict]:
         # Быстрый режим без установки Ollama и без траты ОЗУ
         if mode == "mock":
+            # Разная логика диагностики в зависимости от найденного регламента / лога
+            if "oomkilled" in cleaned_log.lower() or "137" in cleaned_log or "k8s" in runbook_name:
+                report = IncidentReport(
+                    severity="CRITICAL",
+                    root_cause="Container killed by Linux OOM killer (Exit Code 137). Memory limit exceeded.",
+                    cli_command="ssh admin@[REDACTED_IP_1] 'kubectl get pods -n prod | grep OOMKilled && kubectl top nodes'",
+                    runbook_reference=runbook_name,
+                )
+            else:
+                report = IncidentReport(
+                    severity="HIGH",
+                    root_cause="Upstream service refused connection (111: Connection refused). Backend worker pool down.",
+                    cli_command="ssh admin@[REDACTED_IP_1] 'systemctl status app-backend && ss -tulpn | grep 8080'",
+                    runbook_reference=runbook_name,
+                )
             report = IncidentReport(
                 severity="HIGH",
                 root_cause="Upstream-сервис недоступен или отклоняет соединения (обнаружено по паттерну лога).",
@@ -26,8 +40,8 @@ class LLMRouter:
                 runbook_reference=runbook_name,
             )
             usage = {
-                "prompt_tokens": 140,
-                "completion_tokens": 55,
+                "prompt_tokens": 145,
+                "completion_tokens": 58,
                 "model_used": "on-prem-simulator",
                 "mode": "mock",
             }
