@@ -14,7 +14,7 @@ hybrid_assistant_for_noc_dev_ops/
 │
 ├── knowledge_base/              # Markdown runbooks indexed into Vector DB
 │   └── nginx_502_runbook.md     # Standard operating procedure for 502 errors
-│
+│   └── k8s_oom_runbook.md       # Kubernetes OOMKilled (Out Of Memory)
 ├── evals/                       # Automated quality & security regression suite
 │   ├── test_cases.json          # Test dataset with dirty logs & expected outputs
 │   └── run_eval.py              # CI/CD evaluation script (Security + RAG + Schema)
