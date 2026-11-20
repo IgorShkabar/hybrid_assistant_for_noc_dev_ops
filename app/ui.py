@@ -17,10 +17,22 @@ st.markdown(
         h1 { font-size: 1.7rem !important; margin-bottom: 0.2rem !important; }
         p, label, .stMarkdown, .stAlert { font-size: 1.05rem !important; }
         textarea, input, code { font-size: 1.05rem !important; line-height: 1.4 !important; }
+
+        /* Цвет фона и текста для кнопки Jira */
+        .st-key-jira_btn button {
+            background-color: #0052CC !important;
+            color: #FFFFFF !important;
+            border: none !important;
+        }
+        .st-key-jira_btn button:hover {
+            background-color: #0747A6 !important;
+            color: #FFFFFF !important;
+        }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 st.title("Hybrid AI Assistant for NOC & DevOps")
 st.caption("Zero-Trust Scrubber | Qdrant Vector RAG | FinOps Normalized Cache")
@@ -62,7 +74,7 @@ if "last_res" in st.session_state:
         st.write(f"**Matched Runbook (Qdrant):** `{rep['runbook_reference']}`")
         st.code(rep["cli_command"], language="bash")
 
-        if st.button("Create Jira/ServiceNow Ticket (Idempotent Tool)"):
+        if st.button("Create Jira/ServiceNow Ticket (Idempotent Tool)", key="jira_btn"):
             t_res = requests.post(
                 "http://localhost:8000/create-ticket",
                 json={
