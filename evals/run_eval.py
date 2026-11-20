@@ -8,6 +8,7 @@ import asyncio
 import json
 import sys
 import os
+import uuid
 
 # Добавляем корень проекта в PYTHONPATH для корректного импорта app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -15,6 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from app.services.scrubber import DataScrubber
 from app.services.rag_engine import RAGEngine
 from app.services.llm_router import LLMRouter
+from app.services.idempotency import IdempotencyGuard
 
 
 async def run_evaluations():
@@ -24,11 +26,12 @@ async def run_evaluations():
     scrubber = DataScrubber()
     rag = RAGEngine()
     router = LLMRouter()
+    idempotency = IdempotencyGuard()
 
     passed = 0
-    total = len(cases)
+    total = len(cases) + 1  # +1 тест на идемпотентность создания тикета
 
-    print(f"Running {total} evaluation test cases...\n")
+    print(f"🚀 Running {total} evaluation test cases...\n")
 
     for case in cases:
         case_id = case["id"]
@@ -56,6 +59,25 @@ async def run_evaluations():
         print(f"✅ [{case_id}] PASSED (Masked {len(mapping)} entities | Runbook: {runbook_name})")
         passed += 1
 
+    # 4. Тест идемпотентности инструмента /create-ticket (защита от двойного вызова при сбое сети)
+    test_ticket_payload = {
+        "severity": "HIGH",
+        "root_cause": f"Automated eval test incident {uuid.uuid4().hex[:8]}",
+        "runbook_reference": "nginx_502_runbook.md",
+    }
+    first_call = await idempotency.create_ticket_once(test_ticket_payload)
+    second_call = await idempotency.create_ticket_once(test_ticket_payload)
+
+    if (
+        not first_call.get("duplicate_prevented")
+        and second_call.get("duplicate_prevented") is True
+        and first_call.get("ticket_id") == second_call.get("ticket_id")
+    ):
+        print(f"✅ [case_03_idempotency_guard] PASSED (Ticket: {first_call['ticket_id']} | Duplicate blocked)")
+        passed += 1
+    else:
+        print(f"❌ [case_03_idempotency_guard] IDEMPOTENCY FAIL: {first_call} vs {second_call}")
+
     print(f"\n📊 Evaluation Summary: {passed}/{total} passed ({(passed/total)*100:.0f}%)")
     if passed < total:
         sys.exit(1)
@@ -63,6 +85,7 @@ async def run_evaluations():
 
 if __name__ == "__main__":
     asyncio.run(run_evaluations())
+
 
 # Как запустить и проверить (1 команда в терминале): 
 # Убедись, что Docker (Qdrant) запущен и активирован (venv):  docker compose up -d     docker ps
