@@ -6,60 +6,56 @@ An enterprise-grade, security-first AI incident triage assistant built for **NOC
 
 ```text
 hybrid_assistant_for_noc_dev_ops/
-├── .env.example                 # Environment variables template
-├── .gitignore                   # Git exclusions (.env, venv, qdrant_data)
-├── docker-compose.yml           # Infrastructure services (Qdrant & Redis)
-├── requirements.txt             # Pinned Python dependencies
-├── README.md                    # Project documentation and architecture
-│
-├── knowledge_base/              # Markdown runbooks indexed into Vector DB
-│   └── nginx_502_runbook.md     # Standard operating procedure for 502 errors
-│   └── k8s_oom_runbook.md       # Kubernetes OOMKilled (Out Of Memory)
-├── evals/                       # Automated quality & security regression suite
-│   ├── test_cases.json          # Test dataset with dirty logs & expected outputs
-│   └── run_eval.py              # CI/CD evaluation script (Security + RAG + Schema)
-│
-└── app/                         # Application source code (Clean Architecture)
-    ├── __init__.py
-    ├── main.py                  # FastAPI entry point and orchestration pipeline
-    ├── ui.py                    # Streamlit interactive demo dashboard
-    │
-    ├── core/                    # Configuration & settings
-    │   ├── __init__.py
-    │   └── config.py            # Pydantic BaseSettings loader
-    │
-    ├── schemas/                 # Data contracts
-    │   ├── __init__.py
-    │   └── incident.py          # Strict JSON output schema (IncidentReport)
-    │
-    └── services/                # Isolated business logic modules
-        ├── __init__.py
-        ├── scrubber.py          # Zero-Trust PII & secret masking middleware
-        ├── rag_engine.py        # Qdrant vector search & runbook indexing
-        ├── llm_router.py        # Strategy router (Cloud / Local / Mock)
-        └── finops_tracker.py    # Redis caching & token cost telemetry
+├── app/
+│   ├── core/
+│   │   └── config.py           # Environment configuration (Pydantic Settings)
+│   ├── schemas/
+│   │   └── incident.py         # Strict JSON output contract (IncidentReport)
+│   ├── services/
+│   │   ├── scrubber.py         # Zero-Trust IP & secret masking / unmasking
+│   │   ├── finops_tracker.py   # Normalized Redis caching & token cost tracking
+│   │   ├── rag_engine.py       # Qdrant vector search over SOP runbooks
+│   │   ├── llm_router.py       # Hybrid Cloud / Local / Mock inference router
+│   │   └── idempotency.py      # Atomic Redis lock & duplicate prevention for /create-ticket
+│   ├── main.py                 # FastAPI backend (/analyze & /create-ticket)
+│   └── ui.py                   # Streamlit operator & telemetry dashboard
+├── evals/
+│   ├── test_cases.json         # Security, RAG & severity test scenarios
+│   └── run_eval.py             # Automated regression & idempotency test runner
+├── knowledge_base/
+│   ├── nginx_502_runbook.md
+│   └── k8s_oomkilled_runbook.md
+├── docker-compose.yml          # Qdrant & Redis infrastructure
+├── requirements.txt
+└── README.md
+
 ```
 
 ## Architecture & Pipeline
 
 ```text
-[Raw Incident Log] 
-       │
-       ▼
-1. [DataScrubber Middleware] ──► Masks IPs, Tokens, Passwords ([REDACTED_IP_1])
-       │
-       ▼
-2. [FinOps Redis Cache]      ──► Exact hash lookup (0ms latency, \$0.00 cost)
-       │ (Cache Miss)
-       ▼
-3. [Qdrant Vector RAG]       ──► Retrieves verified Markdown Runbooks
-       │
-       ▼
-4. [Hybrid LLM Router]       ──► Routes to Local (Ollama) or Cloud (OpenAI) + Pydantic Structured Output
-       │
-       ▼
-5. [Unmask & Response]       ──► Restores real IPs in read-only CLI diagnostic commands
+Raw Incident Log
+   │
+   ▼
+[1. Zero-Trust Scrubber] ──► Masks internal IPs, tokens & passwords ([REDACTED_IP_1])
+   │
+   ▼
+[2. FinOps Redis Cache]  ──► Normalizes timestamp/PID & checks SHA-256 hash (\$0.00 hit)
+   │ (cache miss)
+   ▼
+[3. Qdrant Vector RAG]   ──► Retrieves grounded SOP runbook from knowledge_base/
+   │
+   ▼
+[4. Hybrid LLM Router]   ──► Routes to Cloud (OpenAI), Local (Ollama), or Mock (Pydantic JSON)
+   │
+   ▼
+[5. In-Memory Unmasking] ──► Restores real IPs into diagnostic CLI command in RAM
+   │
+   ▼
+[6. Idempotent Tool API] ──► POST /create-ticket (app/services/idempotency.py)
+                             Uses Redis atomic lock (SET NX) to block duplicate tickets
 ```
+
 ## Live Demo Preview
 
 ### 1. Zero-Trust PII & Secret Masking + Grounded RAG
