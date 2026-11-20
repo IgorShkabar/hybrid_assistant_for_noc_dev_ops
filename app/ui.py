@@ -48,9 +48,12 @@ if st.button("Analyze Incident", type="primary"):
     if response.status_code != 200:
         st.error(f"Server error ({response.status_code})")
         st.stop()
-    res = response.json()
+    st.session_state.last_res = response.json()
 
+if "last_res" in st.session_state:
+    res = st.session_state.last_res
     col1, col2 = st.columns(2)
+
     with col1:
         st.subheader("Structured Incident Report")
         rep = res["report"]
@@ -58,6 +61,20 @@ if st.button("Analyze Incident", type="primary"):
         st.write(f"**Root Cause:** {rep['root_cause']}")
         st.write(f"**Matched Runbook (Qdrant):** `{rep['runbook_reference']}`")
         st.code(rep["cli_command"], language="bash")
+
+        if st.button("Create Jira/ServiceNow Ticket (Idempotent Tool)"):
+            t_res = requests.post(
+                "http://localhost:8000/create-ticket",
+                json={
+                    "severity": rep["severity"],
+                    "root_cause": rep["root_cause"],
+                    "runbook_reference": rep["runbook_reference"],
+                },
+            ).json()
+            if t_res.get("duplicate_prevented"):
+                st.warning(f"🛡️ Duplicate prevented! Existing ticket returned: **{t_res['ticket_id']}**")
+            else:
+                st.success(f"✅ Ticket created once: **{t_res['ticket_id']}**")
 
     with col2:
         st.subheader("Security & FinOps Telemetry")
