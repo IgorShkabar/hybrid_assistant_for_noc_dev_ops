@@ -6,6 +6,7 @@ from app.services.scrubber import DataScrubber
 from app.services.rag_engine import RAGEngine
 from app.services.llm_router import LLMRouter
 from app.services.finops_tracker import FinOpsTracker
+from app.services.idempotency import IdempotencyGuard
 
 app = FastAPI(title="Hybrid NOC & DevOps AI Assistant")
 
@@ -13,11 +14,18 @@ scrubber = DataScrubber()
 rag = RAGEngine()
 router = LLMRouter()
 finops = FinOpsTracker()
+idempotency = IdempotencyGuard()
 
 
 class AnalyzeRequest(BaseModel):
     raw_log: str
     mode: str = "mock"  # "mock", "local" или "cloud"
+
+
+class CreateTicketRequest(BaseModel):
+    severity: str
+    root_cause: str
+    runbook_reference: str
 
 
 @app.post("/analyze")
@@ -53,3 +61,8 @@ async def analyze_incident(req: AnalyzeRequest):
     result_payload["security_preview"] = {"cleaned_log": cleaned_log, "masked_entities": len(mapping)}
 
     return result_payload
+
+
+@app.post("/create-ticket")
+async def create_ticket(req: CreateTicketRequest):
+    return await idempotency.create_ticket_once(req.model_dump())
