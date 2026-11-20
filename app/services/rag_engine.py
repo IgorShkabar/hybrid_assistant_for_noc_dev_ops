@@ -2,6 +2,7 @@
 # Loads the .md files into Qdrant and finds a necessary reglament by the error text. 
 
 import os
+import re
 import hashlib
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
@@ -12,15 +13,17 @@ class RAGEngine:
     def __init__(self):
         self.client = QdrantClient(url=settings.QDRANT_URL)
         self.collection_name = "noc_runbooks"
+        self.dim = 256
         self._init_collection()
 
     def _simple_embedding(self, text: str) -> list[float]:
-        """Легкий детерминированный эмбеддинг (32 измерения) без скачивания тяжелых ML-моделей."""
-        """Lightweight deterministic embedding (32 dimensions) without the need to download heavy ML models."""
-        words = text.lower().split()
-        vec = [0.0] * 32
+        """Deterministic bag-of-words embedding (256 dimensions) with punctuation removed."""
+        words = re.findall(r"[a-z0-9_]+", text.lower())
+        vec = [0.0] * self.dim
         for w in words:
-            idx = int(hashlib.md5(w.encode()).hexdigest(), 16) % 32
+            if len(w) < 2:
+                continue
+            idx = int(hashlib.md5(w.encode()).hexdigest(), 16) % self.dim
             vec[idx] += 1.0
         norm = sum(x * x for x in vec) ** 0.5 or 1.0
         return [x / norm for x in vec]
@@ -29,9 +32,10 @@ class RAGEngine:
         if not self.client.collection_exists(self.collection_name):
             self.client.create_collection(
                 collection_name=self.collection_name,
-                vectors_config=VectorParams(size=32, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=self.dim, distance=Distance.COSINE),
             )
-            self.index_knowledge_base()
+        # set it up so that new .md files are picked up automatically.
+        self.index_knowledge_base()
 
     def index_knowledge_base(self, folder: str = "knowledge_base"):
         if not os.path.exists(folder):
