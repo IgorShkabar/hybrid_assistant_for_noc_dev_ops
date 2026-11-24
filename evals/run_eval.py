@@ -10,7 +10,7 @@ import sys
 import os
 import uuid
 
-# Добавляем корень проекта в PYTHONPATH для корректного импорта app
+# Add to the Project Root to PYTHONPATH for correct import of app modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.services.scrubber import DataScrubber
@@ -29,28 +29,28 @@ async def run_evaluations():
     idempotency = IdempotencyGuard()
 
     passed = 0
-    total = len(cases) + 1  # +1 тест на идемпотентность создания тикета
+    total = len(cases) + 1  # +1 test on idempotency of ticket creation
 
-    print(f"🚀 Running {total} evaluation test cases...\n")
+    print(f"Running {total} evaluation test cases...\n")
 
     for case in cases:
         case_id = case["id"]
         raw_log = case["raw_log"]
 
-        # 1. Тест безопасности (Scrubber)
+        # Test security (Scrubber)
         cleaned_log, mapping = scrubber.mask(raw_log)
         leaked = [item for item in case["must_mask"] if item in cleaned_log]
         if leaked:
             print(f"❌ [{case_id}] SECURITY FAIL: Leaked entities -> {leaked}")
             continue
 
-        # 2. Тест поиска документации (RAG)
+        # Test documentation search (RAG)
         runbook_name, runbook_text = rag.search_runbook(cleaned_log)
         if runbook_name != case["expected_runbook"]:
             print(f"❌ [{case_id}] RAG FAIL: Expected {case['expected_runbook']}, got {runbook_name}")
             continue
 
-        # 3. Тест контракта ответа (LLM Structured Output)
+        # Test response contract (LLM Structured Output)
         report, _ = await router.analyze_log(cleaned_log, runbook_name, runbook_text, mode="mock")
         if report.severity != case["expected_severity"]:
             print(f"❌ [{case_id}] LLM FAIL: Expected severity {case['expected_severity']}, got {report.severity}")
@@ -59,7 +59,7 @@ async def run_evaluations():
         print(f"✅ [{case_id}] PASSED (Masked {len(mapping)} entities | Runbook: {runbook_name})")
         passed += 1
 
-    # 4. Тест идемпотентности инструмента /create-ticket (защита от двойного вызова при сбое сети)
+    # Test idempotency of the /create-ticket tool (protection against duplicate calls on network failure)
     test_ticket_payload = {
         "severity": "HIGH",
         "root_cause": f"Automated eval test incident {uuid.uuid4().hex[:8]}",
