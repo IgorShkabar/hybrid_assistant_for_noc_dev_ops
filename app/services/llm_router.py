@@ -33,12 +33,7 @@ class LLMRouter:
                     cli_command="ssh admin@[REDACTED_IP_1] 'systemctl status app-backend && ss -tulpn | grep 8080'",
                     runbook_reference=runbook_name,
                 )
-            report = IncidentReport(
-                severity="HIGH",
-                root_cause="Upstream-сервис недоступен или отклоняет соединения (обнаружено по паттерну лога).",
-                cli_command="ssh admin@[REDACTED_IP_1] 'systemctl status app-backend && ss -tulpn | grep 8080'",
-                runbook_reference=runbook_name,
-            )
+            
             usage = {
                 "prompt_tokens": 145,
                 "completion_tokens": 58,
