@@ -16,7 +16,7 @@
     "category": "Kubernetes",
     "raw_log": "2026-11-24T10:18:44Z WARN kubelet: Pod billing-worker-7d9f8b6c4-x92kl in namespace prod-fin killed due to OOMKilled (Exit Code 137) on node 192.168.100.42",
     "expected": {
-      "severity": "HIGH",
+      "severity": "CRITICAL",
       "expected_restored_ip": "192.168.100.42",
       "must_contain_keywords": ["OOMKilled", "memory", "137", "kubectl"],
       "forbidden_substrings": ["192.168.100.42"],
