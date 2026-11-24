@@ -55,7 +55,7 @@ async def analyze_incident(req: AnalyzeRequest):
         "finops": {**usage, "cost_usd": cost, "cache_hit": False},
     }
 
-    # 5. Saving the scrubbed version in cache and restoring IP for the engineer
+    # Saving the scrubbed version in cache and restoring IP for the engineer
     await finops.save_response(cleaned_log, req.mode, result_payload)
     result_payload["report"]["cli_command"] = scrubber.unmask(report.cli_command, mapping)
     result_payload["security_preview"] = {"cleaned_log": cleaned_log, "masked_entities": len(mapping)}

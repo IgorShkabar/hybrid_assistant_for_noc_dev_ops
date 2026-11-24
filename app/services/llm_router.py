@@ -16,9 +16,9 @@ class LLMRouter:
 
     async def analyze_log(
         self, cleaned_log: str, runbook_name: str, runbook_context: str, mode: str = "mock") -> tuple[IncidentReport, dict]:
-        # Быстрый режим без установки Ollama и без траты ОЗУ
+        # Quick mode without installing Ollama and without consuming RAM
         if mode == "mock":
-            # Разная логика диагностики в зависимости от найденного регламента / лога
+            # Different diagnostic logic depending on the found procedure / log
             if "oomkilled" in cleaned_log.lower() or "137" in cleaned_log or "k8s" in runbook_name:
                 report = IncidentReport(
                     severity="CRITICAL",
