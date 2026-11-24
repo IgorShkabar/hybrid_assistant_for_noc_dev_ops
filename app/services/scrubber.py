@@ -9,7 +9,7 @@ from typing import Dict, Tuple
 class DataScrubber:
     def __init__(self):
         # Regular expressions for IPv4 addresses and sensitive credentials
-        self.ip_pattern = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+        self.ip_pattern = re.compile(r"\b(?:\d{1,3}\.){2,3}\d{1,3}(?:/\d{1,2})?\b")
         self.secret_pattern = re.compile(
             r"(?i)((?:token|password|passwd|api_key|apikey|secret|authorization)[\s:=]+['\"]?(?:Bearer\s+)?)([a-zA-Z0-9_\-\.=]{6,})(['\"]?)"
         )
