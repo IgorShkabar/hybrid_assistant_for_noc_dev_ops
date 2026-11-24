@@ -19,7 +19,7 @@ class DataScrubber:
         mapping: Dict[str, str] = {}
         masked_text = text
 
-        # 1. Mask secrets first (preserving key name like 'password=' and masking only the value)
+        # Mask secrets first (preserving key name like 'password=' and masking only the value)
         secret_counter = 1
         secret_to_placeholder: Dict[str, str] = {}
 
@@ -35,7 +35,7 @@ class DataScrubber:
 
         masked_text = self.secret_pattern.sub(_replace_secret, masked_text)
 
-        # 2. Mask IPv4 addresses deterministically in order of appearance
+        # Mask IPv4 addresses deterministically in order of appearance
         ip_counter = 1
         ip_to_placeholder: Dict[str, str] = {}
 
