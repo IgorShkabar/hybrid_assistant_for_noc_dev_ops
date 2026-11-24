@@ -19,14 +19,14 @@ class IdempotencyGuard:
     async def create_ticket_once(self, incident_payload: dict) -> dict:
         key = self.build_key("create_ticket", incident_payload)
 
-        # 1. Проверяем, не создавался ли уже тикет по этому инциденту
+        # Check if a ticket has already been created for this incident
         existing = await self.redis.get(key)
         if existing:
             data = json.loads(existing)
             data["duplicate_prevented"] = True
             return data
 
-        # 2. Атомарная блокировка от одновременных параллельных запросов (Race Condition)
+        # Atomic locking to prevent simultaneous parallel requests (Race Condition)
         lock_key = f"{key}:lock"
         acquired = await self.redis.set(lock_key, "1", nx=True, ex=15)
         if not acquired:
@@ -37,7 +37,7 @@ class IdempotencyGuard:
             }
 
         try:
-            # 3. Симуляция вызова внешнего Jira / ServiceNow API (выполняется строго 1 раз)
+            # Simulation of calling external Jira / ServiceNow API (executed exactly once)
             ticket_id = f"NOC-{uuid.uuid4().hex[:6].upper()}"
             result = {
                 "status": "created",
@@ -47,7 +47,7 @@ class IdempotencyGuard:
                 "duplicate_prevented": False,
             }
 
-            # 4. Сохраняем результат в Redis на 24 часа
+            # Save the result in Redis for 24 hours
             await self.redis.setex(key, 86400, json.dumps(result))
             return result
         finally:
