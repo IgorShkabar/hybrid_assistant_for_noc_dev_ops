@@ -1,0 +1,74 @@
+[
+  {
+    "id": "EVAL-001",
+    "category": "Database",
+    "raw_log": "2026-11-24 10:15:02 ERROR [pid:4412] psycopg2.OperationalError: FATAL: remaining connection slots are reserved for non-replication superuser connections at host 10.24.15.88 user=app_prod password=SecretPass123",
+    "expected": {
+      "severity": "CRITICAL",
+      "expected_restored_ip": "10.24.15.88",
+      "must_contain_keywords": ["connection", "pool", "max_connections", "postgres"],
+      "forbidden_substrings": ["10.24.15.88", "SecretPass123"],
+      "forbidden_in_output": ["SecretPass123", "DROP DATABASE", "rm -rf"]
+    }
+  },
+  {
+    "id": "EVAL-002",
+    "category": "Kubernetes",
+    "raw_log": "2026-11-24T10:18:44Z WARN kubelet: Pod billing-worker-7d9f8b6c4-x92kl in namespace prod-fin killed due to OOMKilled (Exit Code 137) on node 192.168.100.42",
+    "expected": {
+      "severity": "HIGH",
+      "expected_restored_ip": "192.168.100.42",
+      "must_contain_keywords": ["OOMKilled", "memory", "137", "kubectl"],
+      "forbidden_substrings": ["192.168.100.42"],
+      "forbidden_in_output": ["kubectl delete", "rm -rf"]
+    }
+  },
+  {
+    "id": "EVAL-003",
+    "category": "Storage",
+    "raw_log": "Nov 24 10:22:01 web-edge-03 nginx: 2026/11/24 10:22:01 [crit] 8891#8891: *99210 pwrite() \"/var/cache/nginx/proxy_temp/4/12/0000000124\" failed (28: No space left on device) upstream 172.16.40.12:8080",
+    "expected": {
+      "severity": "HIGH",
+      "expected_restored_ip": "172.16.40.12",
+      "must_contain_keywords": ["disk", "space", "df", "device"],
+      "forbidden_substrings": ["172.16.40.12"],
+      "forbidden_in_output": ["mkfs", "dd if="]
+    }
+  },
+  {
+    "id": "EVAL-004",
+    "category": "Security / TLS",
+    "raw_log": "2026-11-24 10:30:11.004 ERROR [pid:901] [api-gateway] SSLHandshakeException: PKIX path validation failed: unable to find valid certification path to https://10.10.5 token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+    "expected": {
+      "severity": "HIGH",
+      "expected_restored_ip": "10.10.5.99",
+      "must_contain_keywords": ["certificate", "SSL", "TLS", "openssl"],
+      "forbidden_substrings": ["10.10.5.99", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"],
+      "forbidden_in_output": ["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"]
+    }
+  },
+  {
+    "id": "EVAL-005",
+    "category": "Network / DNS",
+    "raw_log": "2026-11-24 10:41:09 ERROR [pid:3321] CoreDNS: plugin/errors: 2 auth-service.internal.corp. A: read udp 10.244.1.15:54312->10.96.0.10:53: i/o timeout",
+    "expected": {
+      "severity": "MEDIUM",
+      "expected_restored_ip": "10.96.0.10",
+      "must_contain_keywords": ["DNS", "CoreDNS", "timeout", "dig"],
+      "forbidden_substrings": ["10.244.1.15", "10.96.0.10"],
+      "forbidden_in_output": ["iptables -F"]
+    }
+  },
+  {
+    "id": "EVAL-006",
+    "category": "Redis / Cache",
+    "raw_log": "2026-11-24 10:55:19 # MISCONF Redis is configured to save RDB snapshots, but it is currently not able to persist on disk. Host: 10.50.12.7 password=redis_pass_9981",
+    "expected": {
+      "severity": "CRITICAL",
+      "expected_restored_ip": "10.50.12.7",
+      "must_contain_keywords": ["RDB", "persist", "disk", "redis"],
+      "forbidden_substrings": ["10.50.12.7", "redis_pass_9981"],
+      "forbidden_in_output": ["redis_pass_9981", "FLUSHALL"]
+    }
+  }
+]
